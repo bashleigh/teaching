@@ -131,7 +131,7 @@ Using the command `ps aux` on a linux based machine we can see a list of all the
 With node we can create a script and run that script using the node executable on your window computer. 
 
 ```cmd
-C:// F:/nodejs/node.exe -e "console.log('hello!');"
+C:\\ F:\nodejs\node.exe -e "console.log('hello!');"
 ```
 ### Using node.js as a web server compared to other servers 
 Node is capable of running of as a web server by listen to a port on your machine. Compared to other web servers and languages nodejs is quite unique as it makes a clone of itself when a request is incoming. Meaning it spends less time 'booting' itself up.
@@ -144,10 +144,10 @@ You can build a simple web server like so:
 // server.js
 const http = require('http');
 
-const server = http.createServer(function (req, res) {
+const server = http.createServer(function (request, response) {
   console.log('we have a hit!');
-  res.write('Hello!');
-  res.end();
+  response.write('Hello!');
+  response.end();
 });
 
 server.listen(3000, function() {
@@ -157,7 +157,7 @@ server.listen(3000, function() {
 You can run this script like so
 
 ```cmd
-C:// F:/nodejs/node.exe server.js
+C:\\ F:\nodejs\node.exe server.js
 ```
 
 Once the process prints the line "Listening to port 3000 for requests" the server is ready and listening! You can now request `http://localhost:3000/`. You should get a response back with `Hello!`
@@ -208,26 +208,110 @@ const fileContent = fs.readFileSync('./cats.json', 'utf8');
 
 cats = JSON.parse(fileContent);
 
-const server = http.createServer(function (req, res) {
-  res.writeHead(200, {'Content-Type': 'application/json'});
+const server = http.createServer(function (request, response) {
+  response.writeHead(200, {'Content-Type': 'application/json'});
   
-  switch (req.url) {
+  switch (request.url) {//confusing I know, node calls uri url :thumbs-up: well done nodejs
     case 'cats':
     case '/cats':
     case '/cats/':
     case 'cats/':
-      res.send(cats);
+      response.send(cats);
       break;
 
     default:
-      res.writeHead(404);
-      res.send('Invalid URI');
+      response.writeHead(404);
+      response.send('Invalid URI');
   }
 
-  res.end();
+  response.end();
 });
 
 server.listen(3000, function() {
   console.log('Listening to port 3000 for requests');
 });
 ```
+
+### Using slugs
+
+So you might of noticed in the JSON there's a key called `slug` in the dev world we use this work to determine a unique name of our objects. Or in this instance our cats. Our cats each have a name but! This name isn't always unique! So we have a unique name for them and this is called a slug. It's the same for username's on some social media sites and the like. 
+
+So to get our cat we need to request it using the slug like so `http://localhost:3000/cats/luke-skywalker`. To return the cat Luke Skywalker we need to find him in the array and return him. We can do that like so
+
+```es6
+
+const slug = 'luke-skywalker';
+
+const matches = cats.filter(function (cat) {
+  return cat.slug === slug;
+});
+
+```
+
+`cats.filter` will return an array of cats that have the slug which matches `luke-skywalker`. We know that there can be only one so this array will either contain 1 cat object or nothing. From this we can determine that what the user has asked for exists. Because if there are no objects in the array then the user requested something that doesn't exist and we can tell them to go away because we canny do what they asked. 
+
+```es6
+if (matches.length !== 1) {
+  res.writeHead(404); // 404 is the http status code for not found.
+}
+```
+
+#### So how do we do this in our server?
+
+Using something called 'regular expressions' or Regex for short, we're going to check to see if our URI contains 
+
+```es6
+const http = require('http');
+
+const fs = require('fs');
+
+let cats = [];
+
+const fileContent = fs.readFileSync('./cats.json', 'utf8');
+
+cats = JSON.parse(fileContent);
+
+const server = http.createServer(function (request, response) {
+  response.writeHead(200, {'Content-Type': 'application/json'});
+
+  if (request.url.test(/^\/cats\/\w+/)) {
+    const uriParts = request.url.split('/');
+    const slug = uriParts[1]; // because [0] => cats, [1] => luke-sykwalker
+
+    const matches = cats.filter(function(cat) {
+      cat.slug === slug;
+    });
+
+    if (matches.length !== 1) {
+      response.writeHead(404);
+      response.send('Cat not found');
+      return;
+    }
+
+    response.send(matches[0]);
+    return;
+  }
+  
+  switch (request.url) {
+    case 'cats':
+    case '/cats':
+    case '/cats/':
+    case 'cats/':
+      response.send(cats);
+      break;
+
+    default:
+      response.writeHead(404);
+      response.send('Invalid URI');
+  }
+
+  response.end();
+});
+
+server.listen(3000, function() {
+  console.log('Listening to port 3000 for requests');
+});
+```
+
+## Section 4 Cleaning up
+

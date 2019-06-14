@@ -40,5 +40,11 @@
     "slug": "craig",
     "lives": 1,
     "type": "white"
+  },
+  {
+    "name": "Spooks",
+    "slug": "spooks-1",
+    "lives": 3,
+    "type": "white"
   }
 ]
