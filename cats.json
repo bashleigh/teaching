@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Tom",
+    "slug": "tom-cat",
+    "lives": 5,
+    "type": "tabby"
+  },
+  {
+    "name": "Spooks",
+    "slug": "spooks",
+    "lives": 6,
+    "type": "black"
+  },
+  {
+    "name": "Buttercup",
+    "slug": "buttercup",
+    "lives": 2,
+    "type": "ginger-white"
+  },
+  {
+    "name": "Tiger",
+    "slug": "tiger",
+    "lives": 4,
+    "type": "tabby"
+  },
+  {
+    "name": "Bobby",
+    "slug": "bobby",
+    "lives": 9,
+    "type": "ginger"
+  },
+  {
+    "name": "Luke Skywalker",
+    "slug": "luke-skywalker",
+    "lives": 1,
+    "type": "blue"
+  },
+  {
+    "name": "Craig",
+    "slug": "craig",
+    "lives": 1,
+    "type": "white"
+  }
+]
