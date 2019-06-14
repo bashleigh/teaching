@@ -315,3 +315,199 @@ server.listen(3000, function() {
 
 ## Section 4 Cleaning up
 
+When developing, another developer cannot read another developers code. Apparently it's like the law or something so yea. So you need to make your code as 'clean' and readable as possible. In the above example we can clean this up by cleaning up the different Review methods into functions and calling them based on a route matcher (route relating to our URI).
+
+So firstly let's take the easy one to make a function with and that's the show Review method. 
+
+```es6
+function showAction(request, response) {
+  const uriParts = request.url.split('/');
+  const slug = uriParts[1]; // because [0] => cats, [1] => luke-sykwalker
+
+  const matches = cats.filter(function(cat) {
+    cat.slug === slug;
+  });
+
+  if (matches.length !== 1) {
+    response.writeHead(404);
+    response.send('Cat not found');
+    return response;
+  }
+
+  response.send(matches[0]);
+  return response;
+}
+```
+
+Another function we can make to clean up is the index Review action thing. I'm also ganna replace the switch because it looks crap and we don't need it anymore. 
+
+```es6
+function indexAction(request, response) {
+  response.send(cats);
+  return response;
+}
+```
+Looks a lot neater right? Especially without the switch and lots of if statements all over the place. 
+
+Next we'll make a router based on configuration. The configuration is something we can make up. It's going to be based on matching the regex to a function. Basically it's going to say "does the uri match the regex, if so call the function".
+
+First we need out configuration. I have this idea in my head like this because I want to loop over my configurations to check it matches
+
+```es6
+const routes = [
+  {
+    "regex": /^\/cats\/$/,
+    "function": indexAction,
+  },
+  {
+    "regex": /^\/cats\/\w+/,
+    "function": showAction,
+  },
+];
+```
+
+The above has created an array of objects, the objects contain 2 keys, one called regex for checking against and one called function which contains the actual function that we will want to call.
+
+So now! We want to make our methods callable, so we'll need to change our server to work like so.
+
+```es6
+const http = require('http');
+
+//functions here with cats etc
+
+const server = http.createServer(function(request, response) { 
+  let routeFound = false;
+  routes.forEach(function(route) {
+    if (request.url.test(route.regex)) {
+      response = route.function(request, response);
+      
+      response.writeHead(200, {'Content-Type': 'application/json'});
+
+      routeFound = true;
+    }
+  });
+
+  if (!routeFound) {
+    response.writeHead(404);
+    response.send('Not found');
+  }
+
+  response.end();
+});
+```
+
+All in all, our application should look something like this 
+
+```es6
+const http = require('http');
+const fs = require('fs');
+
+let cats = [];
+
+const fileContent = fs.readFileSync('./cats.json', 'utf8');
+
+const routes = [
+  {
+    "regex": /^\/cats\/$/,
+    "function": indexAction,
+  },
+  {
+    "regex": /^\/cats\/\w+/,
+    "function": showAction,
+  },
+];
+
+cats = JSON.parse(fileContent);
+
+function showAction(request, response) {
+  const uriParts = request.url.split('/');
+  const slug = uriParts[1]; // because [0] => cats, [1] => luke-sykwalker
+
+  const matches = cats.filter(function(cat) {
+    cat.slug === slug;
+  });
+
+  if (matches.length !== 1) {
+    response.writeHead(404);
+    response.send('Cat not found');
+    return response;
+  }
+
+  response.send(matches[0]);
+  return response;
+}
+
+function indexAction(request, response) {
+  response.send(cats);
+  return response;
+}
+
+const server = http.createServer(function(request, response) { 
+  let routeFound = false;
+  routes.forEach(function(route) {
+    if (request.url.test(route.regex)) {
+      response = route.function(request, response);
+      
+      response.writeHead(200, {'Content-Type': 'application/json'});
+
+      routeFound = true;
+    }
+  });
+
+  if (!routeFound) {
+    response.writeHead(404);
+    response.send('Not found');
+  }
+
+  response.end();
+});
+
+server.listen(3000, function() {
+  console.log('Listening to port 3000');
+});
+```
+
+
+## Using exceptions 
+
+Exceptions are pretty handy! In this example I'm going to use them to show a not found page whenever I throw the exception.  
+it's handy to do this because it's saves writing awful return statements etc.
+
+```es6
+function HttpException(message, code) {
+  this.message = message;
+  this.code = code;
+}
+
+function NotFoundException() {
+  return HttpException('Not Found', 404);
+}
+
+const server = http.createServer(function(request, response) { 
+  try {
+    let routeFound = false;
+    routes.forEach(function(route) {
+      if (request.url.test(route.regex)) {
+        response = route.function(request, response);
+        
+        response.writeHead(200, {'Content-Type': 'application/json'});
+
+        routeFound = true;
+      }
+
+      if (!routeFound) {
+        throw NotFoundException();
+      }
+    });
+  } catch(error) {
+
+    response.writeHead(error.code);
+    response.send(error.message);
+
+  }
+
+  response.end();
+});
+```
+
+Now I can throw this wherever! Including within the showAction where a cat doesn't exist.
