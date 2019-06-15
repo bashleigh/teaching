@@ -362,6 +362,10 @@ const routes = [
     "function": indexAction,
   },
   {
+    regex: /^\/cats\/$/, // this is so we can match '/cats' and '/cats/'
+    function: indexAction,
+  },
+  {
     "regex": /^\/cats\/\w+/,
     "function": showAction,
   },
@@ -412,6 +416,10 @@ const routes = [
   {
     "regex": /^\/cats$/,
     "function": indexAction,
+  },
+  {
+    regex: /^\/cats\/$/,
+    function: indexAction,
   },
   {
     "regex": /^\/cats\/\w+/,
