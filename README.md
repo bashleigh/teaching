@@ -216,12 +216,12 @@ const server = http.createServer(function (request, response) {
     case '/cats':
     case '/cats/':
     case 'cats/':
-      response.send(cats);
+      response.write(JSON.stringify(cats));
       break;
 
     default:
       response.writeHead(404);
-      response.send('Invalid URI');
+      response.write('Invalid URI');
   }
 
   response.end();
@@ -274,21 +274,23 @@ cats = JSON.parse(fileContent);
 const server = http.createServer(function (request, response) {
   response.writeHead(200, {'Content-Type': 'application/json'});
 
-  if (request.url.test(/^\/cats\/\w+/)) {
+  if (/^\/cats\/\w+/.test(request.url)) {
     const uriParts = request.url.split('/');
-    const slug = uriParts[1]; // because [0] => cats, [1] => luke-sykwalker
+    const slug = uriParts[2]; // because [0] => '', [1] => cats, [2] => luke-sykwalker
 
     const matches = cats.filter(function(cat) {
-      cat.slug === slug;
+      return cat.slug === slug;
     });
 
     if (matches.length !== 1) {
       response.writeHead(404);
-      response.send('Cat not found');
+      response.write('Cat not found');
+      response.end();
       return;
     }
 
-    response.send(matches[0]);
+    response.write(JSON.stringify(matches[0]));
+    response.end();
     return;
   }
   
@@ -297,12 +299,12 @@ const server = http.createServer(function (request, response) {
     case '/cats':
     case '/cats/':
     case 'cats/':
-      response.send(cats);
+      response.write(JSON.stringify(cats));
       break;
 
     default:
       response.writeHead(404);
-      response.send('Invalid URI');
+      response.write('Invalid URI');
   }
 
   response.end();
@@ -325,16 +327,16 @@ function showAction(request, response) {
   const slug = uriParts[1]; // because [0] => cats, [1] => luke-sykwalker
 
   const matches = cats.filter(function(cat) {
-    cat.slug === slug;
+    return cat.slug === slug;
   });
 
   if (matches.length !== 1) {
     response.writeHead(404);
-    response.send('Cat not found');
+    response.write('Cat not found');
     return response;
   }
 
-  response.send(matches[0]);
+  response.write(JSON.stringify(matches[0]));
   return response;
 }
 ```
@@ -343,7 +345,7 @@ Another function we can make to clean up is the index Review action thing. I'm a
 
 ```es6
 function indexAction(request, response) {
-  response.send(cats);
+  response.write(JSON.stringify(cats));
   return response;
 }
 ```
@@ -356,7 +358,7 @@ First we need out configuration. I have this idea in my head like this because I
 ```es6
 const routes = [
   {
-    "regex": /^\/cats\/$/,
+    "regex": /^\/cats$/,
     "function": indexAction,
   },
   {
@@ -389,7 +391,7 @@ const server = http.createServer(function(request, response) {
 
   if (!routeFound) {
     response.writeHead(404);
-    response.send('Not found');
+    response.write('Not found');
   }
 
   response.end();
@@ -408,7 +410,7 @@ const fileContent = fs.readFileSync('./cats.json', 'utf8');
 
 const routes = [
   {
-    "regex": /^\/cats\/$/,
+    "regex": /^\/cats$/,
     "function": indexAction,
   },
   {
@@ -424,25 +426,28 @@ function showAction(request, response) {
   const slug = uriParts[1]; // because [0] => cats, [1] => luke-sykwalker
 
   const matches = cats.filter(function(cat) {
-    cat.slug === slug;
+    return cat.slug === slug;
   });
 
   if (matches.length !== 1) {
     response.writeHead(404);
-    response.send('Cat not found');
+    response.write('Cat not found');
     return response;
   }
 
-  response.send(matches[0]);
+  response.write(JSON.stringify(matches[0]));
   return response;
 }
 
 function indexAction(request, response) {
-  response.send(cats);
+  response.write(JSON.stringify(cats));
   return response;
 }
 
 const server = http.createServer(function(request, response) { 
+  if (request.url === '/favicon.ico') { // Because google is annoying and breaks my amazing router. Booooo
+    return;
+  }
   let routeFound = false;
   routes.forEach(function(route) {
     if (request.url.test(route.regex)) {
@@ -456,7 +461,7 @@ const server = http.createServer(function(request, response) {
 
   if (!routeFound) {
     response.writeHead(404);
-    response.send('Not found');
+    response.write('Not found');
   }
 
   response.end();
@@ -467,47 +472,96 @@ server.listen(3000, function() {
 });
 ```
 
-
 ## Using exceptions 
 
 Exceptions are pretty handy! In this example I'm going to use them to show a not found page whenever I throw the exception.  
-it's handy to do this because it's saves writing awful return statements etc.
+it's handy to do this because it saves writing awful return statements etc.
 
 ```es6
+const http = require('http');
+const fs = require('fs');
+
+let cats = [];
+
+const fileContent = fs.readFileSync('./cats.json', 'utf8');
+
+const routes = [
+  {
+    regex: /^\/cats$/,
+    function: indexAction,
+  },
+  {
+    regex: /^\/cats\/$/,
+    function: indexAction,
+  },
+  {
+    regex: /^\/cats\/\w+/,
+    function: showAction,
+  },
+];
+
+cats = JSON.parse(fileContent);
+
 function HttpException(message, code) {
   this.message = message;
   this.code = code;
+
+  return this;
 }
 
 function NotFoundException() {
   return HttpException('Not Found', 404);
 }
 
+function showAction(request, response) {
+  const uriParts = request.url.split('/');
+  const slug = uriParts[2]; // because [0] => '', [1] => cats, [2] => luke-sykwalker
+
+  const matches = cats.filter(function(cat) {
+    return cat.slug === slug;
+  });
+
+  if (matches.length !== 1) {
+    throw new NotFoundException();
+  }
+
+  response.write(JSON.stringify(matches[0]));
+  return response;
+}
+
+function indexAction(request, response) {
+  response.write(JSON.stringify(cats));
+  return response;
+}
+
 const server = http.createServer(function(request, response) { 
+  if (request.url === '/favicon.ico') {
+    return;
+  }
   try {
-    let routeFound = false;
-    routes.forEach(function(route) {
-      if (request.url.test(route.regex)) {
-        response = route.function(request, response);
-        
-        response.writeHead(200, {'Content-Type': 'application/json'});
 
-        routeFound = true;
-      }
-
-      if (!routeFound) {
-        throw NotFoundException();
-      }
+    const matchedRoute = routes.filter(function (route) {
+      return route.regex.test(request.url);
     });
+
+    if (matchedRoute.length === 0) {
+      throw new NotFoundException();
+    }
+    response.writeHead(200, {'Content-Type': 'application/json'});
+    response = matchedRoute[0].function(request, response);
+
   } catch(error) {
-
     response.writeHead(error.code);
-    response.send(error.message);
-
+    response.write(error.message);
   }
 
   response.end();
 });
+
+server.listen(3000, function() {
+  console.log('Listening to port 3000');
+});
+
 ```
 
 Now I can throw this wherever! Including within the showAction where a cat doesn't exist.
