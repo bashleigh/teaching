@@ -77,6 +77,9 @@ const array = [];
 ##### Cool array function
 
 **filter**
+
+Array.filter will return a new array without the items that didn't match the condition. 
+
 ```es6
 const arrayOfNumbers = [1,3,4,7,2,8,10];
 
@@ -104,6 +107,9 @@ arrayOfStuff.map(function (person) {
 ```
 
 **forEach**
+
+The Array.forEach method is rather handy, it will loop over every item in the array in order. It's much like the old ES5 way of doing it like this `for (int i = array.length; i > 0; i--) {}`
+
 ```es6 
 const arrayOfPeople = [
   {
@@ -120,6 +126,111 @@ arrayOfStuff.forEach(function (person) {
   console.log(`Hello! ${person.name}!`);
 });
 ```
+
+**switches**
+
+```es6
+const thing = 'this';
+
+switch (thing) {
+  case 'test':
+    console.log('thing === test');
+    break;
+  case 'this':
+    console.log('thing === this');
+    break;
+}
+```
+
+```es6
+const thing = 123;
+
+switch (thing) {
+  case 'test':
+    console.log('thing === test');
+    break;
+  case 'this':
+    console.log('thing === this');
+    break;
+  default:
+    console.log('thing !== test or this');
+}
+```
+**if statements and conditions**
+```es6
+const checkMe = 'hello';
+
+if (checkMe === 'hello') {
+  console.log('you said hello');
+} 
+```
+example 1
+```es6
+const checkMe = 'goodbye';
+
+if (checkMe === 'hello') {
+  console.log('you said hello');
+} else if (checkMe === 'goodbye') {
+  console.log('you said goodbye');
+}
+```
+example 2
+```es6 
+const checkMe = 'Alexa, make a fart noise';
+
+if (checkMe === 'hello') {
+  console.log('you said hello');
+} else if (checkMe === 'goodbye') {
+  console.log('you said goodbye');
+} else {
+  console.log('you didn\'t say goodbye or hello');
+}
+```
+example 3 
+```es6
+const checkMe = 'Alexa, make a fart noise';
+
+const words = checkMe.split(' ');
+
+if (words[0] === 'Alexa,' && words[3] === 'fart' && words[4] === 'noise') {
+  console.log('FARRRTTTT');
+}
+```
+example 4 
+```es6
+const checkMe = 'Alexa, fart noise';
+
+const words = checkMe.split(' ');
+
+if (words[0] === 'Alexa,') {
+  if (
+  (words[3] === 'fart' && words[4] === 'noise')
+  || (words[1] === 'fart' && words[2] === 'noise')
+ ) {
+    console.log('FARRRTTTT');
+  }
+}
+```
+example 5 
+
+```es6
+const boolean = true;
+
+if (boolean) {
+  console.log('boolean is true');
+}
+```
+
+```es6
+const boolean = false;
+
+if (!boolean) {
+  console.log('boolean is false');
+}
+```
+
+> Notice above the `!` reverses what the boolean is. If boolean = true, !boolean === false and vis-ver-sa. If boolean = false, !boolean === true;
+
 ## Section 2 Why use node.js and ECMAScript 
 
 So ECMAScript is JavaScript and JavaScript has always been a front end, client based language designed to be run in client applications such as a browser these days. Node.js is a platform that enables you to use the language JavaScript as a backend process. A process is a script that's running on your machine. This could be anything! Any application running on your computer can utilise several scripts at the same time.  
